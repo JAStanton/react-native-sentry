@@ -249,7 +249,15 @@ public class RNSentryModule extends ReactContextBaseJavaModule {
             ReadableNativeArray exceptionValues = (ReadableNativeArray)event.getMap("exception").getArray("values");
             ReadableNativeMap exception = exceptionValues.getMap(0);
             ReadableNativeMap stacktrace = exception.getMap("stacktrace");
-            addExceptionInterface(eventBuilder, exception.getString("type"), exception.getString("value"), stacktrace.getArray("frames"));
+            // Added here by Convoy because we're not ready to upgrade past 0.33.0, but this is in later versions of
+            // react-native-sentry
+            if (exception.hasKey("value")) {
+                addExceptionInterface(eventBuilder, exception.getString("type"), exception.getString("value"), stacktrace.getArray("frames"));
+            } else {
+                // We use type/type here since this indicates an Unhandled Promise Rejection
+                // https://github.com/getsentry/react-native-sentry/issues/353
+                addExceptionInterface(eventBuilder, exception.getString("type"), exception.getString("type"), stacktrace.getArray("frames"));
+            }
         }
 
         Sentry.capture(buildEvent(eventBuilder));
